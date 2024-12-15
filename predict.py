@@ -1,14 +1,22 @@
 from fastapi import FastAPI, File, UploadFile
 import torch
+import torchvision.models as models
 import torchvision.transforms as transforms
 from PIL import Image
 import io
 
 app = FastAPI()
 
-# Load model and preprocess setup
-model = torch.load("freshness.pt", map_location=torch.device("cpu"))
+# Step 1: Define the model architecture
+model = models.resnet18()  # Replace with the correct architecture if it's not ResNet18
+num_features = model.fc.in_features
+model.fc = torch.nn.Linear(num_features, 1)  # Assuming it's a regression task with one output
+
+# Step 2: Load the state dictionary
+model.load_state_dict(torch.load("freshness.pt", map_location=torch.device("cpu")))
 model.eval()
+
+# Step 3: Define preprocessing transformations
 transform = transforms.Compose([
     transforms.Resize((224, 224)),
     transforms.ToTensor(),
