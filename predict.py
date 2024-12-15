@@ -1,10 +1,8 @@
 from fastapi import FastAPI, File, UploadFile
-from mangum import Mangum
 import torch
 import torchvision.transforms as transforms
 from PIL import Image
 import io
-import json
 
 app = FastAPI()
 
@@ -19,21 +17,18 @@ transform = transforms.Compose([
 
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
-    # Logic to handle image prediction
     try:
+        # Read and process the uploaded image
         image_data = await file.read()
         image = Image.open(io.BytesIO(image_data)).convert("RGB")
         processed_image = transform(image).unsqueeze(0)
-        
+
+        # Predict freshness score
         with torch.no_grad():
             prediction = model(processed_image)
-        
-        # Example of predicting freshness score
+
         freshness_score = prediction.item()
         return {"freshness_score": freshness_score}
 
     except Exception as e:
         return {"error": str(e)}
-
-# Lambda handler function (this is the actual entry point for AWS Lambda)
-lambda_handler = Mangum(app)  # Mangum will convert FastAPI app into a Lambda handler
